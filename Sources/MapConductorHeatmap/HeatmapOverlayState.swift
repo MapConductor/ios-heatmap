@@ -7,6 +7,9 @@ public final class HeatmapOverlayState: ObservableObject {
     public let pointCollector: HeatmapPointCollector
     public let renderer: HeatmapTileRenderer
     public let cameraController: HeatmapCameraController
+    public var trackPointUpdates: Bool {
+        didSet { updatePointTracking() }
+    }
 
     public var radiusPx: Int {
         didSet { scheduleUpdate() }
@@ -41,7 +44,7 @@ public final class HeatmapOverlayState: ObservableObject {
     private let groupId: String
     private let tileServer: LocalTileServer
     private var version: Int64 = 0
-    private var cancellables: Set<AnyCancellable> = []
+    private var pointUpdatesCancellable: AnyCancellable?
     private let updateQueue = DispatchQueue(label: "MapConductorHeatmapOverlay")
     private var explicitPoints: [HeatmapPoint]?
     private var lastPointsFingerprint: Int?
@@ -54,7 +57,8 @@ public final class HeatmapOverlayState: ObservableObject {
         opacity: Double = HeatmapDefaults.defaultOpacity,
         gradient: HeatmapGradient = .default,
         maxIntensity: Double? = nil,
-        weightProvider: @escaping (HeatmapPointState) -> Double = HeatmapOverlayState.defaultWeightProvider
+        weightProvider: @escaping (HeatmapPointState) -> Double = HeatmapOverlayState.defaultWeightProvider,
+        trackPointUpdates: Bool = false
     ) {
         let initialOpacity = min(1.0, max(0.0, opacity))
         self.radiusPx = radiusPx
@@ -62,6 +66,7 @@ public final class HeatmapOverlayState: ObservableObject {
         self.gradient = gradient
         self.maxIntensity = maxIntensity
         self.weightProvider = weightProvider
+        self.trackPointUpdates = trackPointUpdates
         self.groupId = UUID().uuidString
         self.tileServer = TileServerRegistry.get()
         self.renderer = HeatmapTileRenderer(tileSize: tileSize)
@@ -81,13 +86,7 @@ public final class HeatmapOverlayState: ObservableObject {
         )
 
         tileServer.register(routeId: groupId, provider: renderer)
-
-        pointCollector.flow
-            .debounce(for: .milliseconds(50), scheduler: updateQueue)
-            .sink { [weak self] _ in
-                self?.scheduleUpdate()
-            }
-            .store(in: &cancellables)
+        updatePointTracking()
     }
 
     deinit {
@@ -146,6 +145,21 @@ public final class HeatmapOverlayState: ObservableObject {
     private func scheduleUpdate() {
         updateQueue.async { [weak self] in
             self?.applyUpdate()
+        }
+    }
+
+    private func updatePointTracking() {
+        if trackPointUpdates {
+            if pointUpdatesCancellable != nil { return }
+            pointUpdatesCancellable =
+                pointCollector.flow
+                    .debounce(for: .milliseconds(50), scheduler: updateQueue)
+                    .sink { [weak self] _ in
+                        self?.scheduleUpdate()
+                    }
+        } else {
+            pointUpdatesCancellable?.cancel()
+            pointUpdatesCancellable = nil
         }
     }
 

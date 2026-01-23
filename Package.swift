@@ -1,7 +1,13 @@
 // swift-tools-version: 5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
+import Foundation
 import PackageDescription
+
+let usingLocalCore = FileManager.default.fileExists(atPath: "../ios-sdk-core/Package.swift")
+let coreDependency: Package.Dependency = usingLocalCore
+    ? .package(path: "../ios-sdk-core")
+    : .package(url: "https://github.com/MapConductor/ios-sdk-core", from: "1.0.0")
 
 let package = Package(
     name: "mapconductor-heatmap",
@@ -16,7 +22,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/MapConductor/ios-sdk-core", from: "1.0.0"),
+        coreDependency,
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.

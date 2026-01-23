@@ -82,6 +82,7 @@ public struct HeatmapOverlayWithParameters<Content: View>: View {
     private let opacity: Double
     private let gradient: HeatmapGradient
     private let maxIntensity: Double?
+    private let trackPointUpdates: Bool
     private let content: Content
 
     public init(
@@ -89,6 +90,7 @@ public struct HeatmapOverlayWithParameters<Content: View>: View {
         opacity: Double = HeatmapDefaults.defaultOpacity,
         gradient: HeatmapGradient = .default,
         maxIntensity: Double? = nil,
+        trackPointUpdates: Bool = false,
         weightProvider: @escaping (HeatmapPointState) -> Double = HeatmapOverlayState.defaultWeightProvider,
         @ViewBuilder content: () -> Content
     ) {
@@ -96,12 +98,14 @@ public struct HeatmapOverlayWithParameters<Content: View>: View {
         self.opacity = opacity
         self.gradient = gradient
         self.maxIntensity = maxIntensity
+        self.trackPointUpdates = trackPointUpdates
         self.content = content()
         _stateHolder = StateObject(wrappedValue: HeatmapOverlayStateHolder(
             radiusPx: radiusPx,
             opacity: opacity,
             gradient: gradient,
             maxIntensity: maxIntensity,
+            trackPointUpdates: trackPointUpdates,
             weightProvider: weightProvider
         ))
     }
@@ -134,6 +138,7 @@ private class HeatmapOverlayStateHolder: ObservableObject {
         opacity: Double,
         gradient: HeatmapGradient,
         maxIntensity: Double?,
+        trackPointUpdates: Bool,
         weightProvider: @escaping (HeatmapPointState) -> Double
     ) {
         self.state = HeatmapOverlayState(
@@ -141,6 +146,7 @@ private class HeatmapOverlayStateHolder: ObservableObject {
             opacity: opacity,
             gradient: gradient,
             maxIntensity: maxIntensity,
+            trackPointUpdates: trackPointUpdates,
             weightProvider: weightProvider
         )
     }
