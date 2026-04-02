@@ -146,8 +146,8 @@ private class HeatmapOverlayStateHolder: ObservableObject {
             opacity: opacity,
             gradient: gradient,
             maxIntensity: maxIntensity,
+            weightProvider: weightProvider,
             trackPointUpdates: trackPointUpdates,
-            weightProvider: weightProvider
         )
     }
 }
