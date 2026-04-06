@@ -3,13 +3,13 @@ import Foundation
 import MapConductorCore
 
 public final class HeatmapOverlayState: ObservableObject {
-    public let rasterLayerState: RasterLayerState
-    public let pointCollector: HeatmapPointCollector
-    public let renderer: HeatmapTileRenderer
-    public let cameraController: HeatmapCameraController
-    public let tileSize: Int
-    public let disableTileServerCache: Bool
-    public var trackPointUpdates: Bool {
+    let rasterLayerState: RasterLayerState
+    let pointCollector: HeatmapPointCollector
+    let renderer: HeatmapTileRenderer
+    let cameraController: HeatmapCameraController
+    let tileSize: Int
+    let disableTileServerCache: Bool
+    var trackPointUpdates: Bool {
         didSet { updatePointTracking() }
     }
 
@@ -35,7 +35,7 @@ public final class HeatmapOverlayState: ObservableObject {
         didSet { scheduleUpdate() }
     }
 
-    public var useCameraZoomForTiles: Bool = true {
+    var useCameraZoomForTiles: Bool = true {
         didSet {
             if !useCameraZoomForTiles {
                 renderer.resetCameraZoom()
@@ -53,15 +53,55 @@ public final class HeatmapOverlayState: ObservableObject {
     private var lastCameraZoomKey: Int?
     private var cameraUpdateWorkItem: DispatchWorkItem?
 
-    public init(
+    public convenience init(
         tileSize: Int = HeatmapTileRenderer.defaultTileSize,
         radiusPx: Int = HeatmapDefaults.defaultRadiusPx,
         opacity: Double = HeatmapDefaults.defaultOpacity,
         gradient: HeatmapGradient = .default,
         maxIntensity: Double? = nil,
-        weightProvider: @escaping (HeatmapPointState) -> Double = HeatmapOverlayState.defaultWeightProvider,
-        trackPointUpdates: Bool = false,
-        disableTileServerCache: Bool = false
+        weightProvider: @escaping (HeatmapPointState) -> Double = HeatmapOverlayState.defaultWeightProvider
+    ) {
+        self.init(
+            tileSize: tileSize,
+            radiusPx: radiusPx,
+            opacity: opacity,
+            gradient: gradient,
+            maxIntensity: maxIntensity,
+            weightProvider: weightProvider,
+            trackPointUpdates: false,
+            disableTileServerCache: false
+        )
+    }
+
+    @available(*, deprecated, message: "Use init(tileSize:radiusPx:opacity:gradient:maxIntensity:weightProvider:) instead.")
+    public convenience init(
+        radiusPx: Int = HeatmapDefaults.defaultRadiusPx,
+        opacity: Double = HeatmapDefaults.defaultOpacity,
+        gradient: HeatmapGradient = .default,
+        maxIntensity: Double? = nil,
+        weightProvider: @escaping (HeatmapPointState) -> Double = HeatmapOverlayState.defaultWeightProvider
+    ) {
+        self.init(
+            tileSize: HeatmapTileRenderer.defaultTileSize,
+            radiusPx: radiusPx,
+            opacity: opacity,
+            gradient: gradient,
+            maxIntensity: maxIntensity,
+            weightProvider: weightProvider,
+            trackPointUpdates: false,
+            disableTileServerCache: false
+        )
+    }
+
+    public init(
+        tileSize: Int,
+        radiusPx: Int,
+        opacity: Double,
+        gradient: HeatmapGradient,
+        maxIntensity: Double?,
+        weightProvider: @escaping (HeatmapPointState) -> Double,
+        trackPointUpdates: Bool,
+        disableTileServerCache: Bool
     ) {
         let initialOpacity = min(1.0, max(0.0, opacity))
         self.tileSize = tileSize
@@ -99,27 +139,22 @@ public final class HeatmapOverlayState: ObservableObject {
     }
 
     public func copy(
-        tileSize: Int? = nil,
         radiusPx: Int? = nil,
         opacity: Double? = nil,
         gradient: HeatmapGradient? = nil,
         maxIntensity: Double? = nil,
-        weightProvider: ((HeatmapPointState) -> Double)? = nil,
-        trackPointUpdates: Bool? = nil,
-        disableTileServerCache: Bool? = nil
+        weightProvider: ((HeatmapPointState) -> Double)? = nil
     ) -> HeatmapOverlayState {
-        let copied = HeatmapOverlayState(
-            tileSize: tileSize ?? self.tileSize,
+        HeatmapOverlayState(
+            tileSize: self.tileSize,
             radiusPx: radiusPx ?? self.radiusPx,
             opacity: opacity ?? self.opacity,
             gradient: gradient ?? self.gradient,
             maxIntensity: maxIntensity ?? self.maxIntensity,
             weightProvider: weightProvider ?? self.weightProvider,
-            trackPointUpdates: trackPointUpdates ?? self.trackPointUpdates,
-            disableTileServerCache: disableTileServerCache ?? self.disableTileServerCache
+            trackPointUpdates: self.trackPointUpdates,
+            disableTileServerCache: self.disableTileServerCache
         )
-        copied.useCameraZoomForTiles = useCameraZoomForTiles
-        return copied
     }
 
     public func onCameraChanged(_ cameraPosition: MapCameraPosition) {
@@ -158,11 +193,12 @@ public final class HeatmapOverlayState: ObservableObject {
         }
     }
 
-    public func setPoints(_ points: [HeatmapPoint]) {
+
+    func setPoints(_ points: [HeatmapPoint]) {
         updatePointsIfNeeded(points)
     }
 
-    public func updatePointsIfNeeded(_ points: [HeatmapPoint]) {
+    func updatePointsIfNeeded(_ points: [HeatmapPoint]) {
         updateQueue.async { [weak self] in
             guard let self else { return }
             let fingerprint = HeatmapOverlayState.pointsFingerprint(points)

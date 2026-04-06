@@ -63,6 +63,7 @@ public final class HeatmapGradient: Hashable {
 public enum HeatmapDefaults {
     public static let defaultRadiusPx: Int = 20
     public static let defaultOpacity: Double = 0.7
+    public static let defaultMaxZoom: Int = 22
 }
 
 enum HeatmapColor {
