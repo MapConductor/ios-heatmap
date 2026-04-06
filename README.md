@@ -64,7 +64,7 @@ let points = [
                     id: "location-n"),
 ]
 
-HeatmapOverlay(state: heatmapState) {
+HeatmapOverlay(heatmapState) {
     HeatmapPoints(points)
 }
 ```

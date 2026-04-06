@@ -24,10 +24,9 @@ public struct HeatmapPoints: View {
         for state in states {
             let finger = state.fingerPrint()
             result = result &* 31 &+ Int32(truncatingIfNeeded: finger.id)
+            result = result &* 31 &+ Int32(truncatingIfNeeded: finger.position)
             result = result &* 31 &+ Int32(truncatingIfNeeded: finger.weight)
-            result = result &* 31 &+ Int32(truncatingIfNeeded: finger.latitude)
-            result = result &* 31 &+ Int32(truncatingIfNeeded: finger.longitude)
-            result = result &* 31 &+ Int32(truncatingIfNeeded: finger.altitude)
+            result = result &* 31 &+ Int32(truncatingIfNeeded: finger.extra)
         }
         return Int(result)
     }

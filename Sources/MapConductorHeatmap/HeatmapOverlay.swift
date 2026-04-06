@@ -10,7 +10,7 @@ import MapConductorCore
 /// let heatmapState = HeatmapOverlayState()
 ///
 /// GoogleMapView(state: mapViewState) {
-///     HeatmapOverlay(state: heatmapState) {
+///     HeatmapOverlay(heatmapState) {
 ///         ForEach(points) { pointState in
 ///             HeatmapPointView(state: pointState)
 ///         }
@@ -39,12 +39,19 @@ public struct HeatmapOverlay<Content: View>: ViewBasedMapOverlay, Identifiable {
     ///   - state: The HeatmapOverlayState to use
     ///   - content: View builder containing HeatmapPoint views
     public init(
-        state: HeatmapOverlayState,
+        _ state: HeatmapOverlayState,
         @ViewBuilder content: () -> Content
     ) {
         self.overlayState = state
         self.id = state.rasterLayerState.id
         self.content = content()
+    }
+
+    public init(
+        state: HeatmapOverlayState,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.init(state, content: content)
     }
 
     public var body: some View {
@@ -92,6 +99,7 @@ public struct HeatmapOverlayWithParameters<Content: View>: View {
         gradient: HeatmapGradient = .default,
         maxIntensity: Double? = nil,
         trackPointUpdates: Bool = false,
+        disableTileServerCache: Bool = false,
         weightProvider: @escaping (HeatmapPointState) -> Double = HeatmapOverlayState.defaultWeightProvider,
         @ViewBuilder content: () -> Content
     ) {
@@ -107,12 +115,13 @@ public struct HeatmapOverlayWithParameters<Content: View>: View {
             gradient: gradient,
             maxIntensity: maxIntensity,
             trackPointUpdates: trackPointUpdates,
+            disableTileServerCache: disableTileServerCache,
             weightProvider: weightProvider
         ))
     }
 
     public var body: some View {
-        HeatmapOverlay(state: stateHolder.state) {
+        HeatmapOverlay(stateHolder.state) {
             content
         }
         .onChange(of: radiusPx) { newValue in
@@ -140,6 +149,7 @@ private class HeatmapOverlayStateHolder: ObservableObject {
         gradient: HeatmapGradient,
         maxIntensity: Double?,
         trackPointUpdates: Bool,
+        disableTileServerCache: Bool,
         weightProvider: @escaping (HeatmapPointState) -> Double
     ) {
         self.state = HeatmapOverlayState(
@@ -149,6 +159,7 @@ private class HeatmapOverlayStateHolder: ObservableObject {
             maxIntensity: maxIntensity,
             weightProvider: weightProvider,
             trackPointUpdates: trackPointUpdates,
+            disableTileServerCache: disableTileServerCache,
         )
     }
 }
@@ -157,7 +168,11 @@ private class HeatmapOverlayStateHolder: ObservableObject {
 extension HeatmapOverlay where Content == EmptyView {
     /// Creates an empty heatmap overlay with the specified state.
     /// Points can be added programmatically using the state's setPoints() method.
+    public init(_ state: HeatmapOverlayState) {
+        self.init(state, content: { EmptyView() })
+    }
+
     public init(state: HeatmapOverlayState) {
-        self.init(state: state, content: { EmptyView() })
+        self.init(state)
     }
 }

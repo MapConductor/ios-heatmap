@@ -7,6 +7,8 @@ public final class HeatmapOverlayState: ObservableObject {
     public let pointCollector: HeatmapPointCollector
     public let renderer: HeatmapTileRenderer
     public let cameraController: HeatmapCameraController
+    public let tileSize: Int
+    public let disableTileServerCache: Bool
     public var trackPointUpdates: Bool {
         didSet { updatePointTracking() }
     }
@@ -58,9 +60,12 @@ public final class HeatmapOverlayState: ObservableObject {
         gradient: HeatmapGradient = .default,
         maxIntensity: Double? = nil,
         weightProvider: @escaping (HeatmapPointState) -> Double = HeatmapOverlayState.defaultWeightProvider,
-        trackPointUpdates: Bool = false
+        trackPointUpdates: Bool = false,
+        disableTileServerCache: Bool = false
     ) {
         let initialOpacity = min(1.0, max(0.0, opacity))
+        self.tileSize = tileSize
+        self.disableTileServerCache = disableTileServerCache
         self.radiusPx = radiusPx
         self.opacity = opacity
         self.gradient = gradient
@@ -68,7 +73,7 @@ public final class HeatmapOverlayState: ObservableObject {
         self.weightProvider = weightProvider
         self.trackPointUpdates = trackPointUpdates
         self.groupId = UUID().uuidString
-        self.tileServer = TileServerRegistry.get()
+        self.tileServer = TileServerRegistry.get(forceNoStoreCache: disableTileServerCache)
         self.renderer = HeatmapTileRenderer(tileSize: tileSize)
         self.cameraController = HeatmapCameraController(renderer: renderer)
         self.pointCollector = HeatmapPointCollector()
@@ -91,6 +96,30 @@ public final class HeatmapOverlayState: ObservableObject {
 
     deinit {
         tileServer.unregister(routeId: groupId)
+    }
+
+    public func copy(
+        tileSize: Int? = nil,
+        radiusPx: Int? = nil,
+        opacity: Double? = nil,
+        gradient: HeatmapGradient? = nil,
+        maxIntensity: Double? = nil,
+        weightProvider: ((HeatmapPointState) -> Double)? = nil,
+        trackPointUpdates: Bool? = nil,
+        disableTileServerCache: Bool? = nil
+    ) -> HeatmapOverlayState {
+        let copied = HeatmapOverlayState(
+            tileSize: tileSize ?? self.tileSize,
+            radiusPx: radiusPx ?? self.radiusPx,
+            opacity: opacity ?? self.opacity,
+            gradient: gradient ?? self.gradient,
+            maxIntensity: maxIntensity ?? self.maxIntensity,
+            weightProvider: weightProvider ?? self.weightProvider,
+            trackPointUpdates: trackPointUpdates ?? self.trackPointUpdates,
+            disableTileServerCache: disableTileServerCache ?? self.disableTileServerCache
+        )
+        copied.useCameraZoomForTiles = useCameraZoomForTiles
+        return copied
     }
 
     public func onCameraChanged(_ cameraPosition: MapCameraPosition) {

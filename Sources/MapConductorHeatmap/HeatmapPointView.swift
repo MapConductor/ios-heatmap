@@ -23,12 +23,14 @@ public struct HeatmapPointView: View {
     public init(
         position: GeoPoint,
         weight: Double = 1.0,
-        id: String? = nil
+        id: String? = nil,
+        extra: AnyHashable? = nil
     ) {
         self.state = HeatmapPointState(
             position: position,
             weight: weight,
-            id: id
+            id: id,
+            extra: extra
         )
     }
 
