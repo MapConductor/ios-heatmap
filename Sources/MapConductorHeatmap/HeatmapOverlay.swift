@@ -50,6 +50,7 @@ public struct HeatmapOverlay<Content: View>: ViewBasedMapOverlay, Identifiable {
     public var body: some View {
         let contentWithCollector = content
             .environment(\.heatmapPointCollector, overlayState.pointCollector)
+            .environment(\.heatmapOverlayState, overlayState)
 
         return Color.clear
             .frame(width: 0, height: 0)

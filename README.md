@@ -65,12 +65,9 @@ let points = [
 ]
 
 HeatmapOverlay(state: heatmapState) {
-    ForEach(points, id: \.id) { pointState in
-        HeatmapPointView(state: pointState)
-    }
+    HeatmapPoints(points)
 }
 ```
 
 > The concrete map rendering (Google Maps / MapLibre / MapKit) is provided by separate packages.
 > This module focuses on heatmap logic and data handling.
-

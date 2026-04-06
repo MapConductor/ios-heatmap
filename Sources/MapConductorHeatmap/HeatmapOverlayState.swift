@@ -75,12 +75,12 @@ public final class HeatmapOverlayState: ObservableObject {
 
         self.rasterLayerState = RasterLayerState(
             source: RasterSource.urlTemplate(
-                template: tileServer.urlTemplate(routeId: groupId, version: version),
+                template: tileServer.urlTemplate(routeId: groupId, tileSize: renderer.tileSize, cacheKey: String(version)),
                 tileSize: renderer.tileSize,
                 scheme: .XYZ
             ),
             opacity: initialOpacity,
-            visible: true,
+            visible: false,
             id: "heatmap-\(groupId)",
             extra: version
         )
@@ -109,7 +109,11 @@ public final class HeatmapOverlayState: ObservableObject {
                     self.version += 1
                     let nextVersion = self.version
                     let nextSource = RasterSource.urlTemplate(
-                        template: self.tileServer.urlTemplate(routeId: self.groupId, version: nextVersion),
+                        template: self.tileServer.urlTemplate(
+                            routeId: self.groupId,
+                            tileSize: self.renderer.tileSize,
+                            cacheKey: String(nextVersion)
+                        ),
                         tileSize: self.renderer.tileSize,
                         scheme: .XYZ
                     )
@@ -186,14 +190,16 @@ public final class HeatmapOverlayState: ObservableObject {
         version += 1
         let nextVersion = version
         let nextSource = RasterSource.urlTemplate(
-            template: tileServer.urlTemplate(routeId: groupId, version: nextVersion),
+            template: tileServer.urlTemplate(routeId: groupId, tileSize: renderer.tileSize, cacheKey: String(nextVersion)),
             tileSize: renderer.tileSize,
             scheme: .XYZ
         )
+        let shouldShowLayer = !points.isEmpty
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.rasterLayerState.source = nextSource
             self.rasterLayerState.extra = nextVersion
+            self.rasterLayerState.visible = shouldShowLayer
         }
     }
 
