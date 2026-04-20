@@ -2,11 +2,26 @@ import UIKit
 
 public struct HeatmapGradientStop: Hashable {
     public let position: Double
-    public let color: UInt32
+    public let color: UIColor
 
-    public init(position: Double, color: UInt32) {
+    public init(position: Double, color: UIColor) {
         self.position = position
         self.color = color
+    }
+
+    var colorUInt32: UInt32 {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        return HeatmapColor.argb(Int(a * 255), Int(r * 255), Int(g * 255), Int(b * 255))
+    }
+
+    public static func == (lhs: HeatmapGradientStop, rhs: HeatmapGradientStop) -> Bool {
+        lhs.position == rhs.position && lhs.color == rhs.color
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(position)
+        hasher.combine(color.hash)
     }
 }
 
@@ -22,26 +37,26 @@ public final class HeatmapGradient: Hashable {
         self.stops = sorted
     }
 
-    public func colors() -> [UInt32] {
-        stops.map { $0.color }
+    func colors() -> [UInt32] {
+        stops.map { $0.colorUInt32 }
     }
 
     public func startPoints() -> [Float] {
         stops.map { Float($0.position) }
     }
 
-    public func colorAt(position: Double) -> UInt32 {
+    func colorAt(position: Double) -> UInt32 {
         let clamped = max(0.0, min(1.0, position))
         if stops.count == 1 {
-            return stops[0].color
+            return stops[0].colorUInt32
         }
         let lower = stops.last { $0.position <= clamped } ?? stops[0]
         let upper = stops.first { $0.position >= clamped } ?? stops[stops.count - 1]
         if lower.position == upper.position {
-            return lower.color
+            return lower.colorUInt32
         }
         let ratio = (clamped - lower.position) / (upper.position - lower.position)
-        return HeatmapColor.lerpColor(start: lower.color, end: upper.color, ratio: ratio)
+        return HeatmapColor.lerpColor(start: lower.colorUInt32, end: upper.colorUInt32, ratio: ratio)
     }
 
     public static func == (lhs: HeatmapGradient, rhs: HeatmapGradient) -> Bool {
@@ -54,8 +69,8 @@ public final class HeatmapGradient: Hashable {
 
     public static let `default` = HeatmapGradient(
         stops: [
-            HeatmapGradientStop(position: 0.2, color: HeatmapColor.rgb(102, 225, 0)),
-            HeatmapGradientStop(position: 1.0, color: HeatmapColor.rgb(255, 0, 0))
+            HeatmapGradientStop(position: 0.2, color: UIColor(red: 102/255, green: 225/255, blue: 0, alpha: 1)),
+            HeatmapGradientStop(position: 1.0, color: UIColor(red: 1, green: 0, blue: 0, alpha: 1))
         ]
     )
 }
