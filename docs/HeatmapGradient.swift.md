@@ -13,9 +13,9 @@ A single color stop in a heatmap gradient.
 ```swift
 public struct HeatmapGradientStop: Hashable {
     public let position: Double
-    public let color: UInt32
+    public let color: UIColor
 
-    public init(position: Double, color: UInt32)
+    public init(position: Double, color: UIColor)
 }
 ```
 
@@ -26,8 +26,8 @@ public struct HeatmapGradientStop: Hashable {
     - Description: Normalized position in the gradient, in `[0.0, 1.0]`. Values outside this
       range are invalid.
 - `color`
-    - Type: `UInt32`
-    - Description: Color encoded as a 32-bit ARGB integer (e.g. `0xFF66E100` for opaque green).
+    - Type: `UIColor`
+    - Description: The color at this stop.
 
 ---
 
@@ -80,8 +80,8 @@ public enum HeatmapDefaults {
 
 ```swift
 let gradient = HeatmapGradient(stops: [
-    HeatmapGradientStop(position: 0.0, color: 0xFF0000FF), // blue
-    HeatmapGradientStop(position: 0.5, color: 0xFF00FF00), // green
-    HeatmapGradientStop(position: 1.0, color: 0xFFFF0000)  // red
+    HeatmapGradientStop(position: 0.0, color: UIColor(red: 0, green: 0, blue: 1, alpha: 1)),   // blue
+    HeatmapGradientStop(position: 0.5, color: UIColor(red: 0, green: 1, blue: 0, alpha: 1)),   // green
+    HeatmapGradientStop(position: 1.0, color: UIColor(red: 1, green: 0, blue: 0, alpha: 1))    // red
 ])
 ```
