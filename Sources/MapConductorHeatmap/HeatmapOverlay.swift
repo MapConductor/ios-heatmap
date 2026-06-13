@@ -1,24 +1,23 @@
 import MapConductorCore
 import SwiftUI
 
-public struct HeatmapOverlay<Content: View>: ViewBasedMapOverlay, Identifiable {
+public struct HeatmapOverlay: ViewBasedMapOverlay, Identifiable {
     public let id: String
-
     private let overlayState: HeatmapOverlayState
-    private let content: Content
+    private let pointStates: [HeatmapPointState]
 
     public init(
         _ state: HeatmapOverlayState,
-        @ViewBuilder content: () -> Content
+        @HeatmapContentBuilder content: () -> HeatmapViewContent = { HeatmapViewContent() }
     ) {
         self.overlayState = state
-        self.content = content()
+        self.pointStates = content().pointStates
         self.id = state.rasterLayerState.id
     }
 
     public init(
         state: HeatmapOverlayState,
-        @ViewBuilder content: () -> Content
+        @HeatmapContentBuilder content: () -> HeatmapViewContent = { HeatmapViewContent() }
     ) {
         self.init(state, content: content)
     }
@@ -32,7 +31,7 @@ public struct HeatmapOverlay<Content: View>: ViewBasedMapOverlay, Identifiable {
         tileSize: Int = HeatmapTileRenderer.defaultTileSize,
         trackPointUpdates: Bool = false,
         disableTileServerCache: Bool = false,
-        @ViewBuilder content: () -> Content
+        @HeatmapContentBuilder content: () -> HeatmapViewContent = { HeatmapViewContent() }
     ) {
         let state = HeatmapOverlayState(
             tileSize: tileSize,
@@ -48,9 +47,7 @@ public struct HeatmapOverlay<Content: View>: ViewBasedMapOverlay, Identifiable {
     }
 
     public var body: some View {
-        content
-            .environment(\.heatmapPointCollector, overlayState.pointCollector)
-            .environment(\.heatmapOverlayState, overlayState)
+        HeatmapStateUpdater(overlayState: overlayState, pointStates: pointStates)
     }
 
     public func append(to content: inout MapViewContent) {
@@ -58,45 +55,29 @@ public struct HeatmapOverlay<Content: View>: ViewBasedMapOverlay, Identifiable {
     }
 }
 
-public extension HeatmapOverlay where Content == EmptyView {
-    init(
-        _ state: HeatmapOverlayState
-    ) {
-        self.init(state) {
-            EmptyView()
+private struct HeatmapStateUpdater: View {
+    let overlayState: HeatmapOverlayState
+    let pointStates: [HeatmapPointState]
+
+    private var updateToken: Int {
+        var result: Int32 = 1
+        for state in pointStates {
+            let finger = state.fingerPrint()
+            result = result &* 31 &+ Int32(truncatingIfNeeded: finger.id)
+            result = result &* 31 &+ Int32(truncatingIfNeeded: finger.position)
+            result = result &* 31 &+ Int32(truncatingIfNeeded: finger.weight)
+            result = result &* 31 &+ Int32(truncatingIfNeeded: finger.extra)
         }
+        return Int(result)
     }
 
-    init(
-        state: HeatmapOverlayState
-    ) {
-        self.init(state) {
-            EmptyView()
-        }
-    }
-
-    init(
-        radiusPx: Int = HeatmapDefaults.defaultRadiusPx,
-        opacity: Double = HeatmapDefaults.defaultOpacity,
-        gradient: HeatmapGradient = .default,
-        maxIntensity: Double? = nil,
-        weightProvider: @escaping (HeatmapPointState) -> Double = HeatmapOverlayState.defaultWeightProvider,
-        tileSize: Int = HeatmapTileRenderer.defaultTileSize,
-        trackPointUpdates: Bool = false,
-        disableTileServerCache: Bool = false
-    ) {
-        self.init(
-            radiusPx: radiusPx,
-            opacity: opacity,
-            gradient: gradient,
-            maxIntensity: maxIntensity,
-            weightProvider: weightProvider,
-            tileSize: tileSize,
-            trackPointUpdates: trackPointUpdates,
-            disableTileServerCache: disableTileServerCache
-        ) {
-            EmptyView()
-        }
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .task(id: updateToken) {
+                let points = pointStates.map { HeatmapPoint(position: $0.position, weight: $0.weight) }
+                overlayState.setPoints(points)
+            }
     }
 }
 
@@ -110,7 +91,6 @@ public struct HeatmapOverlayWithParameters<Content: View>: View {
     private let tileSize: Int
     private let trackPointUpdates: Bool
     private let disableTileServerCache: Bool
-    private let content: () -> Content
 
     public init(
         radiusPx: Int = HeatmapDefaults.defaultRadiusPx,
@@ -131,7 +111,6 @@ public struct HeatmapOverlayWithParameters<Content: View>: View {
         self.tileSize = tileSize
         self.trackPointUpdates = trackPointUpdates
         self.disableTileServerCache = disableTileServerCache
-        self.content = content
     }
 
     public var body: some View {
@@ -143,8 +122,7 @@ public struct HeatmapOverlayWithParameters<Content: View>: View {
             weightProvider: weightProvider,
             tileSize: tileSize,
             trackPointUpdates: trackPointUpdates,
-            disableTileServerCache: disableTileServerCache,
-            content: content
+            disableTileServerCache: disableTileServerCache
         )
     }
 }

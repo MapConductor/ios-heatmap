@@ -12,9 +12,9 @@ import MapConductorCore
 ///     }
 /// }
 /// ```
-public struct HeatmapPointView: View {
+public struct HeatmapPointView: HeatmapContentItemProtocol, View {
     @Environment(\.heatmapPointCollector) private var collector
-    private let state: HeatmapPointState
+    let state: HeatmapPointState
 
     public init(state: HeatmapPointState) {
         self.state = state
@@ -32,6 +32,10 @@ public struct HeatmapPointView: View {
             id: id,
             extra: extra
         )
+    }
+
+    public func append(to content: inout HeatmapViewContent) {
+        content.pointStates.append(state)
     }
 
     public var body: some View {
