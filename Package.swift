@@ -4,6 +4,8 @@
 import Foundation
 import PackageDescription
 
+let frameworkLibraryType: Product.Library.LibraryType? =
+    ProcessInfo.processInfo.environment["MAPCONDUCTOR_BUILD_XCFRAMEWORK"] == "1" ? .dynamic : nil
 let usingLocalCore = FileManager.default.fileExists(atPath: "../ios-sdk-core/Package.swift")
 let coreDependency: Package.Dependency = usingLocalCore
     ? .package(path: "../ios-sdk-core")
@@ -18,6 +20,7 @@ let package = Package(
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "MapConductorHeatmap",
+            type: frameworkLibraryType,
             targets: ["MapConductorHeatmap"]
         ),
     ],
