@@ -93,7 +93,9 @@ public final class HeatmapTileRenderer: TileProvider {
         cameraZoomKeySnapshot = cameraZoomKey ?? -1
         stateLock.unlock()
 
-        let key = "\(cameraZoomKeySnapshot)/\(request.z)/\(request.x)/\(request.y)" as NSString
+        let pixelRatio = max(1, min(request.pixelRatio, 3))
+        let normalizedRequest = TileRequest(x: request.x, y: request.y, z: request.z, pixelRatio: pixelRatio)
+        let key = "\(cameraZoomKeySnapshot)/\(pixelRatio)x/\(request.z)/\(request.x)/\(request.y)" as NSString
         cacheLock.lock()
         if let cached = cache.object(forKey: key) {
             cacheLock.unlock()
@@ -101,7 +103,7 @@ public final class HeatmapTileRenderer: TileProvider {
         }
         cacheLock.unlock()
 
-        let bytes = renderTileInternal(request: request, tileState: snapshot, cameraZoom: cameraZoomSnapshot)
+        let bytes = renderTileInternal(request: normalizedRequest, tileState: snapshot, cameraZoom: cameraZoomSnapshot)
         cacheLock.lock()
         cache.setObject(bytes == nil ? emptyTileMarker : (bytes! as NSData), forKey: key, cost: bytes?.count ?? 1)
         cacheLock.unlock()
@@ -109,19 +111,22 @@ public final class HeatmapTileRenderer: TileProvider {
     }
 
     private func renderTileInternal(request: TileRequest, tileState: TileState, cameraZoom: Double?) -> Data? {
-        guard let bounds = tileState.bounds else { return emptyTileData }
-        if tileState.points.isEmpty { return emptyTileData }
+        let pixelRatio = request.pixelRatio
+        let renderSize = tileSize * pixelRatio
+        let emptyTile = emptyTileData(pixelRatio: pixelRatio)
+        guard let bounds = tileState.bounds else { return emptyTile }
+        if tileState.points.isEmpty { return emptyTile }
 
         let zoom = Double(request.z)
         let zoomScale = pow(2.0, (cameraZoom ?? zoom) - zoom)
-        let radiusRaw = Int((Double(tileState.radiusPx) / zoomScale).rounded())
+        let radiusRaw = Int((Double(tileState.radiusPx * pixelRatio) / zoomScale).rounded())
         // Clamp to avoid excessive allocations when camera zoom differs greatly from tile zoom.
-        let radius = max(1, min(radiusRaw, tileSize))
+        let radius = max(1, min(radiusRaw, renderSize))
         let kernel = resolveKernel(radius)
         let tileWidth = HeatmapTileRenderer.worldWidth / pow(2.0, zoom)
-        let padding = tileWidth * Double(radius) / Double(tileSize)
+        let padding = tileWidth * Double(radius) / Double(renderSize)
         let tileWidthPadded = tileWidth + 2.0 * padding
-        let gridDim = tileSize + radius * 2
+        let gridDim = renderSize + radius * 2
         let bucketWidth = tileWidthPadded / Double(gridDim)
 
         let minX = Double(request.x) * tileWidth - padding
@@ -136,7 +141,7 @@ public final class HeatmapTileRenderer: TileProvider {
             minY: bounds.minY - padding,
             maxY: bounds.maxY + padding
         )
-        if !tileBounds.intersects(paddedBounds) { return emptyTileData }
+        if !tileBounds.intersects(paddedBounds) { return emptyTile }
 
         var intensity = Array(repeating: 0.0, count: gridDim * gridDim)
         var hasPoints = false
@@ -177,15 +182,15 @@ public final class HeatmapTileRenderer: TileProvider {
             if added { hasPoints = true }
         }
 
-        if !hasPoints { return emptyTileData }
+        if !hasPoints { return emptyTile }
 
         let convolved = convolve(grid: intensity, dimOld: gridDim, kernel: kernel)
         let zoomIndex = Int(cameraZoom ?? zoom)
         let clampedIndex = max(0, min(zoomIndex, tileState.maxIntensities.count - 1))
         let maxIntensity = tileState.maxIntensities[clampedIndex]
-        if maxIntensity <= 0.0 { return emptyTileData }
+        if maxIntensity <= 0.0 { return emptyTile }
 
-        return colorize(grid: convolved.grid, dim: convolved.dim, colorMap: tileState.colorMap, max: maxIntensity) ?? emptyTileData
+        return colorize(grid: convolved.grid, dim: convolved.dim, colorMap: tileState.colorMap, max: maxIntensity) ?? emptyTile
     }
 
     private func buildWeightedPoints(_ points: [HeatmapPoint]) -> [WeightedPoint] {
@@ -605,7 +610,16 @@ public final class HeatmapTileRenderer: TileProvider {
     private var vDSPOutputBuffer: [Double] = []
     private var vDSPIntermediateSize = 0
     private var vDSPOutputSize = 0
-    private lazy var emptyTileData: Data = HeatmapTileRenderer.makeEmptyTile(size: tileSize)
+    private var emptyTileDataByPixelRatio: [Int: Data] = [:]
+
+    private func emptyTileData(pixelRatio: Int) -> Data {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        if let cached = emptyTileDataByPixelRatio[pixelRatio] { return cached }
+        let data = HeatmapTileRenderer.makeEmptyTile(size: tileSize * pixelRatio)
+        emptyTileDataByPixelRatio[pixelRatio] = data
+        return data
+    }
 
     public static let defaultTileSize = RasterSource.defaultTileSize
     public static let defaultCacheSizeKb = 8 * 1024
