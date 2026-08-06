@@ -51,6 +51,15 @@ public struct HeatmapOverlay: ViewBasedMapOverlay, Identifiable {
     }
 
     public func append(to content: inout MapViewContent) {
+        // カメラ変更を受け取るため、オーバーレイコントローラとして登録する。
+        // android-heatmap の `mapController.registerOverlayController(cameraController)` と同じ。
+        // iOS の地図コンテンツはビュー階層ではなく `MapViewContent` という値なので、
+        // コントローラへは `MapServiceRegistryScope`（content 組み立て中だけ見えるスコープ）
+        // 経由で到達する。
+        MapServiceRegistryScope.current
+            .get(OverlayControllerRegistryKey.self)?
+            .register(overlayState.cameraController)
+
         content.rasterLayers.append(RasterLayer(state: overlayState.rasterLayerState))
     }
 }

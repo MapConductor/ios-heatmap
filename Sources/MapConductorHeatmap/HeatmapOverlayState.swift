@@ -6,7 +6,7 @@ public final class HeatmapOverlayState: ObservableObject {
     let rasterLayerState: RasterLayerState
     let pointCollector: HeatmapPointCollector
     let renderer: HeatmapTileRenderer
-    let cameraController: HeatmapCameraController
+    public let cameraController: HeatmapCameraController
     let tileSize: Int
     let disableTileServerCache: Bool
     var trackPointUpdates: Bool {
@@ -126,8 +126,7 @@ public final class HeatmapOverlayState: ObservableObject {
             ),
             opacity: initialOpacity,
             visible: false,
-            id: "heatmap-\(groupId)",
-            extra: version
+            id: "heatmap-\(groupId)"
         )
 
         tileServer.register(routeId: groupId, provider: renderer)
@@ -184,7 +183,6 @@ public final class HeatmapOverlayState: ObservableObject {
                     DispatchQueue.main.async { [weak self] in
                         guard let self else { return }
                         self.rasterLayerState.source = nextSource
-                        self.rasterLayerState.extra = nextVersion
                     }
                 }
                 self.cameraUpdateWorkItem = workItem
@@ -263,7 +261,6 @@ public final class HeatmapOverlayState: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.rasterLayerState.source = nextSource
-            self.rasterLayerState.extra = nextVersion
             self.rasterLayerState.visible = shouldShowLayer
         }
     }
