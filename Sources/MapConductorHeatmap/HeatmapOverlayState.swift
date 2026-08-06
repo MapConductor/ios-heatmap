@@ -222,7 +222,7 @@ public final class HeatmapOverlayState: ObservableObject {
             if pointUpdatesCancellable != nil { return }
             pointUpdatesCancellable =
                 pointCollector.flow
-                    .debounce(for: .milliseconds(50), scheduler: updateQueue)
+                    .debounce(for: .milliseconds(Settings.Default.composeEventDebounce), scheduler: updateQueue)
                     .sink { [weak self] _ in
                         self?.scheduleUpdate()
                     }
