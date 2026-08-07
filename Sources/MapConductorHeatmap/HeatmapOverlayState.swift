@@ -119,7 +119,7 @@ public final class HeatmapOverlayState: ObservableObject {
         self.pointCollector = HeatmapPointCollector()
 
         self.rasterLayerState = RasterLayerState(
-            source: RasterSource.urlTemplate(
+            source: RasterLayerSource.urlTemplate(
                 template: tileServer.urlTemplate(routeId: groupId, tileSize: renderer.tileSize, cacheKey: String(version)),
                 tileSize: renderer.tileSize,
                 scheme: .XYZ
@@ -171,7 +171,7 @@ public final class HeatmapOverlayState: ObservableObject {
                     guard self.lastCameraZoomKey == zoomKey else { return }
                     self.version += 1
                     let nextVersion = self.version
-                    let nextSource = RasterSource.urlTemplate(
+                    let nextSource = RasterLayerSource.urlTemplate(
                         template: self.tileServer.urlTemplate(
                             routeId: self.groupId,
                             tileSize: self.renderer.tileSize,
@@ -252,7 +252,7 @@ public final class HeatmapOverlayState: ObservableObject {
 
         version += 1
         let nextVersion = version
-        let nextSource = RasterSource.urlTemplate(
+        let nextSource = RasterLayerSource.urlTemplate(
             template: tileServer.urlTemplate(routeId: groupId, tileSize: renderer.tileSize, cacheKey: String(nextVersion)),
             tileSize: renderer.tileSize,
             scheme: .XYZ

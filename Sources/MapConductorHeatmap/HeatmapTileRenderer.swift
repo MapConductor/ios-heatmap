@@ -220,7 +220,7 @@ public final class HeatmapTileRenderer: TileProvider {
         let maxIntensities: [Double]
     }
 
-    public static let defaultTileSize = RasterSource.defaultTileSize
+    public static let defaultTileSize = RasterLayerSource.defaultTileSize
     public static let defaultCacheSizeKb = 8 * 1024
     private static let defaultRadiusPx = 20
 }

@@ -7,7 +7,7 @@ to produce raster tiles that are composited onto the map.
 
 ```swift
 public final class HeatmapTileRenderer: TileProvider {
-    public static let defaultTileSize: Int = RasterSource.defaultTileSize  // 512
+    public static let defaultTileSize: Int = RasterLayerSource.defaultTileSize  // 512
     public static let defaultCacheSizeKb: Int = 8192  // 8 MB
 
     public let tileSize: Int
@@ -24,7 +24,7 @@ public final class HeatmapTileRenderer: TileProvider {
 - `tileSize`
     - Type: `Int`
     - Default: `512`
-    - Description: Tile size in pixels. Matches `RasterSource.defaultTileSize`.
+    - Description: Tile size in pixels. Matches `RasterLayerSource.defaultTileSize`.
 - `cacheSizeKb`
     - Type: `Int`
     - Default: `8192`
@@ -32,7 +32,7 @@ public final class HeatmapTileRenderer: TileProvider {
 
 ## Static Properties
 
-- `defaultTileSize` — `Int` — `512`. Same as `RasterSource.defaultTileSize`.
+- `defaultTileSize` — `Int` — `512`. Same as `RasterLayerSource.defaultTileSize`.
 - `defaultCacheSizeKb` — `Int` — `8192` (8 MB).
 
 ## Methods
