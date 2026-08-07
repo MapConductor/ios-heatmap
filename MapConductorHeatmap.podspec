@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = "MapConductorHeatmap"
-  s.version = "1.1.4"
+  s.version = "1.2.0"
   s.summary = "MapConductor's tile-based heatmap overlay extension."
   s.license = { :type => "Apache-2.0", :file => "LICENSE" }
   s.author = "MapConductor"
