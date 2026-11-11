@@ -176,7 +176,9 @@ public final class HeatmapTileRenderer: TileProvider {
             minY: bounds.minY - padding,
             maxY: bounds.maxY + padding
         )
-        if !tileBounds.intersects(paddedBounds) { return emptyTile }
+        // 日付変更線をまたいだ点も余白ぶんは隣のタイルに掛かる（HeatmapTileBinner が回り込ませる）ので、
+        // ここで弾くときも 1 周ずらした位置と比べる。
+        if !tileBounds.intersectsWrapped(paddedBounds) { return emptyTile }
 
         guard let intensity = HeatmapTileBinner.bin(points: tileState.points, geometry: geometry) else {
             return emptyTile
