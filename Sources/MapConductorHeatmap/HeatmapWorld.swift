@@ -26,6 +26,14 @@ struct Bounds {
             minY <= other.maxY &&
             maxY >= other.minY
     }
+
+    /// 日付変更線の向こう側（x を 1 周ずらした位置）にある `other` とも重なるかを見る。
+    func intersectsWrapped(_ other: Bounds) -> Bool {
+        let w = HeatmapWorld.worldWidth
+        return intersects(other) ||
+            intersects(Bounds(minX: other.minX - w, maxX: other.maxX - w, minY: other.minY, maxY: other.maxY)) ||
+            intersects(Bounds(minX: other.minX + w, maxX: other.maxX + w, minY: other.minY, maxY: other.maxY))
+    }
 }
 
 /// 緯度経度を世界座標へ移し、範囲を出す部分。
